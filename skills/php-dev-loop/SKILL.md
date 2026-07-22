@@ -25,9 +25,9 @@ The skill is self-contained: every subagent is dispatched as
 directory — no pre-installed agents required. Every dispatch prompt MUST
 begin with:
 
-> Read `<SKILL_DIR>/agents/<role file>` and adopt that role completely
-> before doing anything else. (`<SKILL_DIR>` = the directory containing
-> this SKILL.md.)
+> Read `.php-dev-loop/skill/agents/<role file>` and adopt that role
+> completely before doing anything else. (Path is relative to the repo
+> root — Setup copies the skill files there.)
 
 | Role | Role file | Model | When |
 |------|-----------|-------|------|
@@ -50,23 +50,39 @@ reviews.
 
 ## Setup (before first dispatch)
 
-Work from the repository the task targets.
+Work from the repository the task targets. The scratch space is
+`.php-dev-loop/` at the repo root — inside the working directory, so file
+tools never leave the project and trigger no permission prompts (for you
+or any subagent). It is git-excluded during the loop and deleted at the
+end.
 
-```bash
-SCRATCH="/tmp/php-dev-loop/$(basename "$(git rev-parse --show-toplevel)")-$(git branch --show-current)"
-mkdir -p "$SCRATCH"
-BASELINE=$(git stash create); BASELINE=${BASELINE:-$(git rev-parse HEAD)}
-echo "$BASELINE" > "$SCRATCH/baseline"
-```
+1. **Baseline:** run `git stash create` and capture the printed SHA.
+   Empty output means the tree is clean → run `git rev-parse HEAD` and
+   use that instead. `git stash create` snapshots a dirty worktree into
+   an unreferenced commit WITHOUT modifying anything; pre-existing
+   changes are then invisible to the reviewer — it sees only what the
+   loop produced.
+2. **Record it:** write the SHA to `.php-dev-loop/baseline` with the
+   Write tool (this also creates the directory).
+3. **Hide scratch from git:** run `git rev-parse --git-path info/exclude`
+   and append a `.php-dev-loop/` line to that file with the file tools
+   (skip if the line is already present). Freshly-initialized repos may
+   not have the file at all — the Write tool creates it and its parent
+   directory. `git status` and the reviewer's diff stay clean without
+   touching the repo's .gitignore.
+4. **Copy the skill in:** `cp -r "<SKILL_DIR>/." ".php-dev-loop/skill/"`
+   (`<SKILL_DIR>` = the directory containing this SKILL.md). You and
+   every subagent read role files and prompt templates from this
+   in-project copy, never from the plugin directory.
 
-`git stash create` snapshots a dirty worktree into an unreferenced commit
-WITHOUT modifying anything; empty output means the tree is clean → use HEAD.
-Pre-existing changes are then invisible to the reviewer — it sees only what
-the loop produced.
+Keep every git command a plain `git ...` invocation — no variable
+assignments, `$( )` captures into variables, or `{ }` groupings wrapping
+them. Plain-prefix commands match a `Bash(git *)` allowlist instead of
+prompting; capture outputs from the tool result, not shell variables.
 
 ## The Brief — always, ticket or not
 
-Write the task brief to `$SCRATCH/brief.md` before any dispatch. It is the
+Write the task brief to `.php-dev-loop/brief.md` before any dispatch. It is the
 single source of requirements — spec-compliance review is checked against it,
 so no brief = unreviewable code.
 
@@ -90,9 +106,9 @@ dispatching — one batched question, not a guess.
 
 ## The Loop
 
-1. **Dispatch implementer** using [implementer-prompt.md](implementer-prompt.md).
+1. **Dispatch implementer** using `.php-dev-loop/skill/implementer-prompt.md`.
    Give it: one line of scene-setting, the brief path, the report path
-   (`$SCRATCH/report.md`), the repo path, the PHPUnit container command.
+   (`.php-dev-loop/report.md`), the repo path, the PHPUnit container command.
 2. **Handle status:** `DONE` → continue. `DONE_WITH_CONCERNS` → read concerns;
    correctness/scope concerns get resolved before review. `NEEDS_CONTEXT` →
    provide it, re-dispatch. `BLOCKED` → more context, a more capable model, a
@@ -100,18 +116,24 @@ dispatching — one batched question, not a guess.
 3. **Package the diff** (never into your own context):
    ```bash
    git add -N .   # make new files visible to diff
-   { git status --porcelain; echo; git diff --stat "$(cat "$SCRATCH/baseline")"; echo; git diff -U10 "$(cat "$SCRATCH/baseline")"; } > "$SCRATCH/diff.txt"
+   git status --porcelain > .php-dev-loop/diff.txt
+   git diff --stat "$(cat .php-dev-loop/baseline)" >> .php-dev-loop/diff.txt
+   git diff -U10 "$(cat .php-dev-loop/baseline)" >> .php-dev-loop/diff.txt
    ```
-4. **Dispatch the iteration reviewer** using [reviewer-prompt.md](reviewer-prompt.md)
+   Run these as separate `git`-prefixed commands, not one `{ }` compound.
+4. **Dispatch the iteration reviewer** using `.php-dev-loop/skill/reviewer-prompt.md`
    with the brief, report, and diff paths.
 5. **Verdict:** Critical/Important findings → dispatch ONE fix subagent with
    the complete findings list (fixer re-runs covering tests, appends to
    report) → regenerate diff → re-review. Repeat until approved. Minor
    findings: record, hand to the final review — do not silently drop them.
 6. **Final gate:** dispatch the final reviewer with the same three files plus
-   the Minor-findings list, using [reviewer-prompt.md](reviewer-prompt.md).
+   the Minor-findings list, using `.php-dev-loop/skill/reviewer-prompt.md`.
    Critical/Important → one fix dispatch → re-review by the final reviewer.
-7. **Report to the user:** what was built, files changed, test evidence,
+7. **Clean up and report:** remove the scratch space with
+   `git clean -fdX .php-dev-loop/` — `-X` deletes only git-ignored files
+   and the path scopes it to the scratch dir, so nothing else is touched.
+   Then report to the user: what was built, files changed, test evidence,
    findings fixed, Minor items left, review iteration count. State that
    nothing is committed and staging awaits their go-ahead.
 
@@ -134,7 +156,9 @@ Focused filter while iterating; relevant suite once before reporting DONE.
 ## Red Flags — STOP
 
 - **Any `git commit`, `git stash push/pop`, or `git add` (except `add -N`) by
-  you or any subagent.** "The skill implies permission" — it does not. "The
+  you or any subagent.** Same for any `git clean` other than exactly
+  `git clean -fdX .php-dev-loop/` — broader forms destroy the user's
+  untracked files. "The skill implies permission" — it does not. "The
   reviewer needs a commit to diff" — it diffs the baseline. Approved code is
   still uncommitted code.
 - Implementing or fixing code yourself in the controller session ("it's a
