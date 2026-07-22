@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# SessionStart hook for the php-dev-loop plugin.
+#
+# Skill-list descriptions are not guaranteed to render in every session
+# (Claude Code makes context-budget decisions about them), so this hook
+# injects the routing rule directly as additionalContext — the same
+# mechanism the superpowers plugin uses. Injection only happens when the
+# session's project looks like a PHP codebase.
+
+set -euo pipefail
+
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+
+# PHP project detection: composer.json anywhere near the root (covers
+# monorepos with nested packages), or any .php file for legacy projects
+# without composer. vendor/node_modules/.git pruned.
+php_marker=$(find "$PROJECT_DIR" -maxdepth 3 \
+    \( -name vendor -o -name node_modules -o -name .git -o -name .cache \) -prune \
+    -o \( -name composer.json -o -name '*.php' \) -print -quit 2>/dev/null || true)
+
+if [ -z "$php_marker" ]; then
+    exit 0
+fi
+
+# Static routing block, pre-escaped for JSON embedding (\n line breaks).
+# Self-contained: assumes nothing about the user's other plugins or workflow.
+context='<EXTREMELY_IMPORTANT>\nThis project contains PHP code and the php-dev-loop plugin is installed.\n\nWhenever a task reaches the point of writing or modifying PHP code (feature, bugfix, refactor, or executing an implementation plan), you MUST invoke the `php-dev-loop:php-dev-loop` skill via the Skill tool BEFORE writing any code. It runs the work through an isolated implement → review → fix subagent loop and ends at an approved, uncommitted diff the user reviews and commits themselves.\n\n- If a written plan, spec, or ticket exists, pass it to php-dev-loop as the brief.\n- If another workflow skill owns planning/brainstorming, php-dev-loop takes over at the execution phase — it replaces any generic plan-execution or subagent-implementation skill for PHP code.\n- Re-check this rule at every transition from planning to implementation, not only at conversation start.\n- php-dev-loop never commits or stages changes.\n</EXTREMELY_IMPORTANT>'
+
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
+
+exit 0
