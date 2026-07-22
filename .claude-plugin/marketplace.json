@@ -1,0 +1,17 @@
+{
+  "name": "vmlinuz82-plugins",
+  "owner": {
+    "name": "vmlinuz82"
+  },
+  "description": "Claude Code plugins by vmlinuz82",
+  "plugins": [
+    {
+      "name": "php-dev-loop",
+      "displayName": "PHP Dev Loop",
+      "source": "./",
+      "description": "Subagent write → review → rework loop for PHP/Symfony tasks: isolated implementer and reviewer roles, staged review gates, ends at an approved uncommitted diff",
+      "repository": "https://github.com/vmlinuz82/claude-php-dev-loop",
+      "license": "MIT"
+    }
+  ]
+}

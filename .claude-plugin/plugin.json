@@ -1,0 +1,10 @@
+{
+  "name": "php-dev-loop",
+  "displayName": "PHP Dev Loop",
+  "description": "Subagent write → review → rework loop for PHP/Symfony tasks: isolated implementer and reviewer roles, staged review gates, ends at an approved uncommitted diff",
+  "author": {
+    "name": "Konstantin Ivanov"
+  },
+  "repository": "https://github.com/vmlinuz82/claude-php-dev-loop",
+  "license": "MIT"
+}
