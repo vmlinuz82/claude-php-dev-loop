@@ -39,23 +39,22 @@ begin with:
 
 | Role | Role file | Model | When |
 |------|-----------|-------|------|
-| Implementer | `agents/php-implementer.md` | `sonnet` for a task with a complete spec touching 1-2 files; `opus` for multi-file work or design judgment; `fable` for architectural decisions or high-risk changes (payments, auth, data migrations) | One per task |
-| Fixer | `agents/php-implementer.md` | `sonnet` (`haiku` for a one-line mechanical fix) | Review findings |
-| Iteration reviewer | `agents/iteration-reviewer.md` | `sonnet`; `opus` when the task diff is large, subtle, or security-sensitive | After every implement/fix dispatch |
+| Implementer | `agents/php-implementer.md` | `opus`; `fable` for architectural decisions or high-risk changes (payments, auth, data migrations) | One per task |
+| Fixer | `agents/php-implementer.md` | `opus` | Review findings |
+| Iteration reviewer | `agents/iteration-reviewer.md` | `opus`; `fable` when the task diff is large, subtle, or security-sensitive | After every implement/fix dispatch |
 | Final reviewer | `agents/final-reviewer.md` | `fable` — always the most capable | Once, after the last task is approved |
 
 All roles share `agents/coding-standards.md` — edit standards there, once.
 
-Well-decomposed tasks are mostly `sonnet` implementer work — that is the
+Well-decomposed tasks are mostly `opus` implementer work — that is the
 point of decomposing. **Always set `model:` explicitly on every dispatch.**
 An omitted model inherits the session's model — often the most expensive —
 which silently defeats this table. Escalation ladder is
-`sonnet → opus → fable`, never downgrade: a fixer facing a design-level
-finding gets re-dispatched on `opus` (or `fable` if the finding is
-architectural); a model that reported BLOCKED gets re-dispatched on the
-next tier up, never retried unchanged. Turn count beats token price —
-`haiku` only for pure transcription-level work; `sonnet` is the floor for
-anything requiring judgment, including all reviews.
+`opus → fable`, never downgrade: a fixer facing a design-level or
+architectural finding gets re-dispatched on `fable`; a model that reported
+BLOCKED gets re-dispatched on the next tier up, never retried unchanged.
+Turn count beats token price — `opus` is the floor for every dispatch,
+including all reviews.
 
 ## Setup (before first dispatch)
 

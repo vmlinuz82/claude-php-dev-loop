@@ -7,8 +7,8 @@ this dispatch only supplies the inputs, scope, and output contract.
 ```
 Agent (general-purpose):
   description: "Review: [short task name]"
-  model: [REQUIRED — per SKILL.md Roles and Models table: sonnet for iteration
-         reviews (opus if large/subtle/security-sensitive), fable for the
+  model: [REQUIRED — per SKILL.md Roles and Models table: opus for iteration
+         reviews (fable if large/subtle/security-sensitive), fable for the
          final gate]
   prompt: |
     Read [SKILL_DIR]/agents/[iteration-reviewer.md | final-reviewer.md] and
