@@ -1,6 +1,6 @@
 ---
 name: php-dev-loop
-description: Use when implementing a feature, bugfix, or Jira ticket in any PHP project (modern Symfony or legacy alike), or when executing an implementation plan against a PHP codebase — work that should go through a subagent write → review → rework loop before being shown to the user
+description: Use when implementing a feature, bugfix, or Jira ticket in any PHP project (modern Symfony or legacy alike), or when executing an implementation plan against a PHP codebase — work that should go through a subagent write → review → rework loop before being shown to the user. NOT for trivial mechanical edits (fully specified by the user, single file, ~10 lines or fewer, no new logic, no security-sensitive surface) — do those directly in-session.
 ---
 
 # PHP Dev Loop
@@ -10,6 +10,14 @@ review that task's diff with a reviewer subagent, and loop fix → re-review
 until the task is approved — then move to the next task. Finish with one
 adversarial final review over the whole change. **Never commit** — the loop
 ends at an approved, uncommitted diff the user commits themselves.
+
+**Bail out on trivial work.** If the entire request is a trivial mechanical
+edit — fully specified by the user, single file, roughly ten lines or
+fewer, no new class/method/branching logic, no security-sensitive surface
+(auth, payments, SQL construction, user input handling) — do NOT run the
+loop. State that the change is below the loop's threshold and make the
+edit directly in-session, following `agents/coding-standards.md`. When any
+criterion is in doubt, run the loop.
 
 **Core principles:**
 
