@@ -1,34 +1,55 @@
 # PHP Dev Loop
 
 A [Claude Code](https://claude.com/claude-code) skill that runs every PHP/Symfony
-task through a **write → review → rework loop** before you ever see the code:
+task through a **task-by-task write → review → rework loop** before you ever
+see the code:
 
 ```
-brief → implementer subagent → diff → iteration reviewer
-            ▲                              │
-            └────── fix subagent ◄── Critical/Important findings
-                                           │ approved
-                                           ▼
-                              final adversarial reviewer
-                                           │ approved
-                                           ▼
-                        approved, UNCOMMITTED diff + report
+ticket / plan → task list (task-1-brief, task-2-brief, …)
+                     │ per task
+                     ▼
+task brief → fresh implementer subagent → task diff → iteration reviewer
+                 ▲                                         │
+                 └───── fix subagent ◄── Critical/Important findings
+                                                           │ approved
+                                                           ▼
+                                   baseline snapshot, next task … until done
+                                                           │
+                                                           ▼
+                              final adversarial reviewer (whole diff)
+                                                           │ approved
+                                                           ▼
+                                approved, UNCOMMITTED diff + report
 ```
 
-The point: the model that writes the code never reviews it. Implementer and
-reviewers run as **fresh subagents with isolated contexts**, hand artifacts to
-each other as files (brief, report, diff), and loop until two independent
-review gates approve. You get working, twice-reviewed, test-backed code — and
-**nothing is ever committed**; the loop ends at an uncommitted diff you commit
-yourself.
+The point: work moves in **small, independently reviewed iterations**, and the
+model that writes the code never reviews it. The task is decomposed first —
+or an existing plan (e.g. from superpowers' `writing-plans`) is consumed
+task-by-task. Each task gets a fresh implementer subagent with isolated
+context; a reviewer sees only that task's diff against the previous approved
+baseline, so small diffs get real scrutiny instead of a skim over one giant
+change. Artifacts move as files (briefs, reports, diffs), and the run ends
+with an adversarial review of the whole change. You get working,
+twice-reviewed, test-backed code — and **nothing is ever committed**; the
+loop ends at an uncommitted diff you commit yourself.
 
 ## Features
 
+- **Task-level iteration** — the work is decomposed into tasks the size of one
+  test cycle; each gets its own brief, implementer, and review gate. Per-task
+  baselines (unreferenced git tree snapshots — no commits, no stash) keep every
+  review diff scoped to just that task
+- **Consumes decomposed plans** — an implementation plan with `### Task N:`
+  sections (e.g. from superpowers' `writing-plans`) is executed task-by-task,
+  never flattened into one brief
 - **Two staged review gates** — a strict diff reviewer on every iteration, plus
-  one adversarial "assume the author missed something" reviewer as the final gate
+  one adversarial "assume the author missed something" reviewer over the whole
+  change as the final gate
 - **Works with or without a ticket** — given a Jira ticket it reviews against
   its acceptance criteria; given a vague ask it first derives verifiable
   acceptance criteria itself, so even ad-hoc code gets a real spec review
+- **Compaction-safe** — a progress ledger in the scratch dir records approved
+  tasks, so a resumed or compacted session never re-implements finished work
 - **Model tiering** — cheap models for mechanical work, top models
   (Opus/Fable) for design and the final gate; every dispatch pins its model
   explicitly
@@ -83,8 +104,15 @@ or just ask for PHP work that deserves review — the skill triggers on its own:
 add retry with backoff to the webhook sender, make sure it's solid quality
 ```
 
-Claude then writes a brief with verifiable acceptance criteria, runs the loop,
-and reports back: what was built, files changed, test evidence, findings fixed
+You can also hand it a decomposed plan — its tasks become the loop's tasks:
+
+```
+execute docs/superpowers/plans/2026-07-23-webhooks.md with php-dev-loop
+```
+
+Claude then builds the task list (from your plan, or by deriving task briefs
+with verifiable acceptance criteria itself), runs the per-task loop, and
+reports back: tasks completed, files changed, test evidence, findings fixed
 per review round, and anything minor left over. You review the diff and commit
 when satisfied.
 

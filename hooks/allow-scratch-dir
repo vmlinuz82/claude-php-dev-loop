@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# PreToolUse hook for the php-dev-loop plugin.
+#
+# The skill keeps all of its working files in `.php-dev-loop/` at the repo
+# root. Every session would otherwise prompt the user for each read, write,
+# and shell command touching that scratch space. This hook auto-allows
+# exactly those calls so the loop runs uninterrupted on any machine the
+# plugin is installed on; anything it does not recognize falls through to
+# the normal permission flow (empty output = no decision).
+
+set -euo pipefail
+
+# Without jq we cannot parse the payload safely — defer to the prompt.
+command -v jq >/dev/null 2>&1 || exit 0
+
+input=$(cat)
+tool=$(jq -r '.tool_name // empty' <<<"$input")
+
+allow() {
+    printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"php-dev-loop scratch space (.php-dev-loop/)"}}'
+    exit 0
+}
+
+# A path counts as scratch space only when it sits inside a .php-dev-loop
+# directory and contains no `..` segment that could escape it.
+scratch_path() {
+    case "$1" in
+        *..*) return 1 ;;
+        .php-dev-loop|.php-dev-loop/*|*/.php-dev-loop|*/.php-dev-loop/*) return 0 ;;
+    esac
+    return 1
+}
+
+case "$tool" in
+    Read|Write|Edit|NotebookEdit)
+        path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty' <<<"$input")
+        [ -n "$path" ] && scratch_path "$path" && allow
+        ;;
+    Glob|Grep)
+        path=$(jq -r '.tool_input.path // empty' <<<"$input")
+        [ -n "$path" ] && scratch_path "$path" && allow
+        ;;
+    Bash)
+        cmd=$(jq -r '.tool_input.command // empty' <<<"$input")
+        [ -n "$cmd" ] || exit 0
+        # Whitelist of the exact command shapes the skill runs against its
+        # scratch dir. Anchored regexes with restricted character classes:
+        # no `;`, `&&`, `|`, or redirects can hide inside a matching line.
+        allow_re='^(cat \.php-dev-loop/[A-Za-z0-9._/-]+|mkdir( -p)? \.php-dev-loop[A-Za-z0-9._/-]*|cp -r "[^"]*" "\.php-dev-loop/[A-Za-z0-9._/-]*"|GIT_INDEX_FILE=\.php-dev-loop/snap-index git (add -A|write-tree)|git diff (--stat|-U[0-9]+) "\$\(cat \.php-dev-loop/baseline-[0-9]+\)" >{1,2} \.php-dev-loop/(tasks/task-[0-9]+-|final-)diff\.txt|git clean -fdX \.php-dev-loop/?)$'
+        # Multi-line commands are allowed only if every non-empty line matches.
+        while IFS= read -r line; do
+            [ -z "${line//[[:space:]]/}" ] && continue
+            grep -Eq "$allow_re" <<<"$line" || exit 0
+        done <<<"$cmd"
+        allow
+        ;;
+esac
+
+exit 0

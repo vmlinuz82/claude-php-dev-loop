@@ -21,16 +21,22 @@ Agent (general-purpose):
 
     ## Inputs
 
-    - Requirements: [SCRATCH]/brief.md — verify the diff against this
-    - Implementer's report: [SCRATCH]/report.md — treat as UNVERIFIED claims;
-      verify against the diff. A stated rationale never downgrades a finding.
-    - Diff: [SCRATCH]/diff.txt — contains git status, stat summary, and full
-      diff with context. This is your view of the change; read files outside
-      it only to check a concrete named risk (call sites of a changed
-      signature, etc.), and name what you checked.
+    - Requirements: [SCRATCH]/tasks/task-[N]-brief.md — verify the diff
+      against this
+    - Implementer's report: [SCRATCH]/tasks/task-[N]-report.md — treat as
+      UNVERIFIED claims; verify against the diff. A stated rationale never
+      downgrades a finding.
+    - Diff: [SCRATCH]/tasks/task-[N]-diff.txt — stat summary and full diff
+      with context, covering ONLY this task's changes (earlier approved
+      tasks are baked into the diff's base and are not under review). This
+      is your view of the change; read files outside it only to check a
+      concrete named risk (call sites of a changed signature, etc.), and
+      name what you checked.
 
-    [Final review only: Minor findings already recorded by the iteration
-    reviewer — triage which must be fixed before merge: [LIST]]
+    [Final review only — replace the three inputs above with: the whole-run
+    diff [SCRATCH]/final-diff.txt, ALL task briefs and reports in
+    [SCRATCH]/tasks/, and the Minor findings accumulated in the ledger —
+    triage which must be fixed before merge: [LIST]]
 
     ## Scope
 

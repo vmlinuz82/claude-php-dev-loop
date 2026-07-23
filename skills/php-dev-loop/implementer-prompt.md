@@ -18,14 +18,15 @@ Agent (general-purpose):
 
     ## Task
 
-    Read your brief first: [SCRATCH]/brief.md
+    Read your brief first: [SCRATCH]/tasks/task-[N]-brief.md
     It is your requirements — exact values, signatures, and acceptance
     criteria in it are binding, verbatim.
 
     ## Context
 
-    [One or two lines: where this fits, relevant existing services/patterns,
-    decisions already made]
+    [One or two lines: where this task fits, relevant existing
+    services/patterns, plus interfaces and decisions from already-approved
+    tasks that the brief cannot know — never a history of prior tasks]
 
     ## Before You Begin
 
@@ -56,7 +57,7 @@ Agent (general-purpose):
 
     ## Report
 
-    Write your full report to [SCRATCH]/report.md:
+    Write your full report to [SCRATCH]/tasks/task-[N]-report.md:
     - What you implemented (or attempted)
     - Test command run + relevant output
     - Files changed
