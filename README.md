@@ -50,9 +50,14 @@ loop ends at an uncommitted diff you commit yourself.
   acceptance criteria itself, so even ad-hoc code gets a real spec review
 - **Compaction-safe** — a progress ledger in the scratch dir records approved
   tasks, so a resumed or compacted session never re-implements finished work
-- **Model tiering** — cheap models for mechanical work, top models
-  (Opus/Fable) for design and the final gate; every dispatch pins its model
-  explicitly
+- **Session-relative models** — no hardcoded model names to go stale:
+  implementers and iteration reviewers inherit whatever model your session
+  runs on, the adversarial final gate escalates to the most capable model
+  available, and a model you name yourself always wins
+- **Project QA tooling respected** — PHPStan / PHP_CodeSniffer / PHPMD
+  configs in the target repo are detected up front; implementers run them
+  on the files they change, and the project's rulesets are enforced as
+  review findings
 - **Self-contained** — the implementer/reviewer roles and the PHP coding
   standards are bundled markdown files; no custom agents to install
 - **Never touches git state** — no commits, no staging, no stash mutations, by
@@ -138,10 +143,12 @@ skills/php-dev-loop/
   roles read it.
 - **PHP version** is never pinned — roles target whatever the project's
   `composer.json` declares.
-- **Test command** is decided per session: whatever you or the project
-  (composer scripts, Makefile, CI config, project CLAUDE.md) defines.
-- **Models** are configured in the table in `SKILL.md` if your cost/quality
-  trade-offs differ.
+- **Test and static-analysis commands** are decided per session: whatever
+  you or the project (composer scripts, Makefile, CI config, project
+  CLAUDE.md) defines.
+- **Models** are session-relative (see Roles and Models in `SKILL.md`) —
+  to override, just name a model in conversation, in your plan, or in the
+  project's CLAUDE.md.
 
 ## License
 

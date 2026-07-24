@@ -9,6 +9,13 @@ Establish from `composer.json` (`require.php` / `platform.php`, framework
 packages) and the surrounding code what the project is. Then:
 
 - Sections whose heading carries a condition apply only when it holds.
+- **Project static-analysis config is binding.** If the project ships
+  PHPStan, PHP_CodeSniffer, or PHPMD configuration (rulesets, levels,
+  baselines), those rules are the project's codified conventions: write
+  code that passes them, and treat reported violations as review findings.
+  Where a project ruleset conflicts with the generic Style section below,
+  the project ruleset wins. Never edit tool configs or baseline files to
+  silence a violation.
 - Control Flow, SOLID, and Security apply to EVERY project — they are
   REQUIRED, never optional. If a rule names a specific tool the project
   doesn't have (DQL/QueryBuilder, serialization groups), apply the closest

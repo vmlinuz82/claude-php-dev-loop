@@ -7,13 +7,15 @@ this dispatch only supplies the inputs, scope, and output contract.
 ```
 Agent (general-purpose):
   description: "Review: [short task name]"
-  model: [REQUIRED — per SKILL.md Roles and Models table: opus for iteration
-         reviews (fable if large/subtle/security-sensitive), fable for the
-         final gate]
+  model: [Iteration reviews: OMIT to inherit the session model; set the
+         gate model only when the diff is large, subtle, or
+         security-sensitive. Final gate: the gate model — set explicitly
+         only when it differs from the session model. Per SKILL.md Roles
+         and Models]
   prompt: |
-    Read [SKILL_DIR]/agents/[iteration-reviewer.md | final-reviewer.md] and
-    adopt that role completely before doing anything else — including the
-    coding-standards file it points to.
+    Read [SCRATCH]/skill/agents/[iteration-reviewer.md | final-reviewer.md]
+    and adopt that role completely before doing anything else — including
+    the coding-standards file it points to.
 
     Review one task's uncommitted implementation in [repo path].
     There are NO commits to inspect — the diff file below is the complete
@@ -40,9 +42,10 @@ Agent (general-purpose):
 
     ## Scope
 
-    Review ONLY changes in the diff. Tests were run by the implementer — the
-    report carries the evidence; do not re-run suites. Missing/unconvincing
-    test evidence is itself a finding.
+    Review ONLY changes in the diff. Tests and the project's configured
+    static-analysis tools were run by the implementer — the report carries
+    the evidence; do not re-run them. Missing/unconvincing test or
+    static-analysis evidence is itself a finding.
 
     Read-only on this checkout: no edits, no git state changes.
 

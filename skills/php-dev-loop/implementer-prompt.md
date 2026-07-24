@@ -7,10 +7,12 @@ from the bundled role file.
 ```
 Agent (general-purpose):
   description: "Implement: [short task name]"
-  model: [REQUIRED — per SKILL.md Roles and Models table; an omitted model
-         silently inherits the session's most expensive one]
+  model: [OMIT — the dispatch inherits the session model, which is the
+         rule for implementers and fixers. Set it only when SKILL.md's
+         Roles and Models section calls for a different tier: an
+         escalation, or a model the user named]
   prompt: |
-    Read [SKILL_DIR]/agents/php-implementer.md and adopt that role
+    Read [SCRATCH]/skill/agents/php-implementer.md and adopt that role
     completely before doing anything else — including the coding-standards
     file it points to.
 
@@ -39,11 +41,18 @@ Agent (general-purpose):
     2. Write/update tests following the conventions of sibling test files
        (read 3 existing tests in the same directory first)
     3. Run tests with: [TEST COMMAND — controller fills this in per
-       SKILL.md Tests; the implementer never chooses its own runner]
+       SKILL.md Tests and Static Analysis; the implementer never chooses
+       its own runner]
        Focused subset while iterating; the relevant suite once before reporting.
-    4. Self-review: completeness vs brief, edge cases, coding standards,
+    4. Run static analysis on the files you changed with:
+       [STATIC ANALYSIS COMMANDS — controller fills these in per SKILL.md
+       Tests and Static Analysis; DELETE this step if Setup found no
+       configured tools]
+       The project's rulesets and baselines are binding — fix violations;
+       never edit tool configs or baseline files to silence them.
+    5. Self-review: completeness vs brief, edge cases, coding standards,
        tests assert real behavior
-    5. Report back
+    6. Report back
 
     ## Hard Rules
 
@@ -60,6 +69,8 @@ Agent (general-purpose):
     Write your full report to [SCRATCH]/tasks/task-[N]-report.md:
     - What you implemented (or attempted)
     - Test command run + relevant output
+    - Static analysis command(s) run + output, if the project has them
+      configured
     - Files changed
     - Self-review findings
     - Concerns
@@ -75,6 +86,8 @@ Agent (general-purpose):
 
 **Fix dispatch differences:** replace "Your Job" step 1 with the complete
 findings list from the reviewer (all Critical + Important, verbatim, with
-file:line). The fixer re-runs the tests covering its changes and APPENDS a
-fix section to the same report file. Before re-dispatching the reviewer,
-confirm the fix report names the covering tests, the command, and the output.
+file:line). The fixer re-runs the tests covering its changes plus the
+static-analysis commands over the files it touched, and APPENDS a fix
+section to the same report file. Before re-dispatching the reviewer,
+confirm the fix report names the covering tests, the commands, and the
+output.

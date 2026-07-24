@@ -45,24 +45,39 @@ begin with:
 > completely before doing anything else. (Path is relative to the repo
 > root — Setup copies the skill files there.)
 
-| Role | Role file | Model | When |
-|------|-----------|-------|------|
-| Implementer | `agents/php-implementer.md` | `opus`; `fable` for architectural decisions or high-risk changes (payments, auth, data migrations) | One per task |
-| Fixer | `agents/php-implementer.md` | `opus` | Review findings |
-| Iteration reviewer | `agents/iteration-reviewer.md` | `opus`; `fable` when the task diff is large, subtle, or security-sensitive | After every implement/fix dispatch |
-| Final reviewer | `agents/final-reviewer.md` | `fable` — always the most capable | Once, after the last task is approved |
+Models are chosen relative to the session, never by hardcoded name —
+model families change, and this table must keep working without edits
+when they do. Two tiers exist per run: the **session model** (whatever
+the user launched this session on) and the **gate model** (the most
+capable model available to this session — you know the current lineup
+from your own context; when the session model already is the top tier,
+the two coincide).
+
+| Role | Role file | Model rule | When |
+|------|-----------|------------|------|
+| Implementer | `agents/php-implementer.md` | Session model — omit `model:` | One per task |
+| Fixer | `agents/php-implementer.md` | Session model — omit `model:` | Review findings |
+| Iteration reviewer | `agents/iteration-reviewer.md` | Session model — omit `model:`; gate model when the task diff is large, subtle, or security-sensitive | After every implement/fix dispatch |
+| Final reviewer | `agents/final-reviewer.md` | Gate model — set `model:` explicitly only when it differs from the session model | Once, after the last task is approved |
 
 All roles share `agents/coding-standards.md` — edit standards there, once.
 
-Well-decomposed tasks are mostly `opus` implementer work — that is the
-point of decomposing. **Always set `model:` explicitly on every dispatch.**
-An omitted model inherits the session's model — often the most expensive —
-which silently defeats this table. Escalation ladder is
-`opus → fable`, never downgrade: a fixer facing a design-level or
-architectural finding gets re-dispatched on `fable`; a model that reported
-BLOCKED gets re-dispatched on the next tier up, never retried unchanged.
-Turn count beats token price — `opus` is the floor for every dispatch,
-including all reviews.
+- **Inheritance is the mechanism, and it is deliberate.** An omitted
+  `model:` resolves to the session model — the tier the user chose when
+  launching the session. Never pin a lower tier to "save cost"; turn
+  count beats token price.
+- **The user's word wins.** A model the user named — in conversation, in
+  the plan, or in the project's CLAUDE.md — overrides these rules for the
+  dispatches it covers.
+- **Weak-session guard.** If the session model is a small/fast tier (a
+  haiku-class model), ask the user ONCE before the first dispatch whether
+  to run the loop on it or name a stronger model — reviews from a
+  mechanical-tier model rubber-stamp. This is the only model question you
+  ever ask.
+- **Escalation ladder — one tier up, never a retry unchanged.** A fixer
+  facing a design-level or architectural finding is re-dispatched one
+  tier up from the model that produced the work; a subagent that reported
+  BLOCKED is re-dispatched one tier up. Never downgrade mid-loop.
 
 ## Setup (before first dispatch)
 
@@ -95,6 +110,14 @@ deleted at the end.
    (`<SKILL_DIR>` = the directory containing this SKILL.md). You and every
    subagent read role files and prompt templates from this in-project
    copy, never from the plugin directory.
+5. **Detect project QA tooling:** check the repo root for PHPStan
+   (`phpstan.neon`, `phpstan.neon.dist`, `phpstan.dist.neon`),
+   PHP_CodeSniffer (`phpcs.xml`, `phpcs.xml.dist`, `.phpcs.xml`,
+   `.phpcs.xml.dist`) and PHPMD (`phpmd.xml`, `phpmd.xml.dist`,
+   `.phpmd.xml`) configs, plus composer.json `require-dev`/`scripts`,
+   the Makefile, and CI config that run them. Note what exists in the
+   ledger — the Tests and Static Analysis section turns it into dispatch
+   commands.
 
 Keep every git command a plain `git ...` invocation — no variable
 assignments, `$( )` captures into variables, or `{ }` groupings wrapping
@@ -186,7 +209,8 @@ N (per-task files live in `.php-dev-loop/tasks/`):
 
 ## Final Gate
 
-Dispatch the final reviewer (`fable`) once, after every task is approved:
+Dispatch the final reviewer (gate model) once, after every task is
+approved:
 
 1. Package the WHOLE diff — baseline-0 to worktree — into
    `.php-dev-loop/final-diff.txt` (same three commands, baseline-0).
@@ -206,7 +230,7 @@ Then report to the user: tasks completed, files changed, test evidence,
 findings fixed per task, Minor items left, review iteration counts. State
 that nothing is committed and staging awaits their go-ahead.
 
-## Tests
+## Tests and Static Analysis
 
 The implementer (and every fixer) runs the tests and reports output —
 reviewers do not re-run suites. Every implementer/fixer dispatch carries
@@ -220,6 +244,17 @@ the project's test command, resolved by this rule:
 
 Focused filter while iterating; the relevant suite once before reporting
 DONE.
+
+**Static analysis is part of DONE.** For every tool detected in Setup
+step 5, resolve its command by the same rule as the test command and
+write it into every implementer and fixer dispatch, scoped to changed
+files where the tool supports it. The implementer runs the tools and
+reports their output next to the test evidence; the project's rulesets,
+levels, and baselines are binding as written — never edit tool configs or
+baseline files to silence a violation. A DONE report from a project with
+configured tools but no static-analysis output is incomplete — same rule
+as missing test output; a violation the implementer cannot resolve is a
+concern in the report, never a silent omission.
 
 ## Red Flags — STOP
 
@@ -248,6 +283,7 @@ DONE.
   approved — they are different gates.
 - Dispatching a role without its role file ("the model knows how to
   review") — every dispatch starts by reading its `agents/*.md` role.
-- Accepting a DONE report with no test command + output in it.
+- Accepting a DONE report with no test command + output in it — or, where
+  Setup detected static-analysis tools, no static-analysis output.
 - Re-dispatching a task the ledger already marks approved — after
   compaction or resume, the ledger and the baselines are the truth.
